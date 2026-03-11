@@ -254,6 +254,96 @@ export const odataOptions: INodeProperties[] = [
 		],
 	},
 
+	// ─── Navigation Property Filters ────────────────────────────────────────
+	{
+		displayName: 'Navigation Property Filters',
+		name: 'collectionFilters',
+		type: 'fixedCollection',
+		typeOptions: {
+			multipleValues: true,
+		},
+		default: {},
+		description: 'Filter by navigation properties. Use "Collection (any)" for one-to-many (e.g., Lists/any(l: l/ListId eq 123)) or "Direct Navigation" for single properties (e.g., City/Id eq 3941). Combined with AND to the main filter.',
+		displayOptions: {
+			show: {
+				operation: ['getAll'],
+				useFilterBuilder: [true],
+			},
+		},
+		options: [
+			{
+				displayName: 'Filters',
+				name: 'filters',
+				values: [
+					{
+						displayName: 'Filter Type',
+						name: 'filterType',
+						type: 'options',
+						options: [
+							{ name: 'Collection (any) — e.g., Lists/any(l: l/ListId eq 123)', value: 'any' },
+							{ name: 'Direct Navigation — e.g., City/Id eq 3941', value: 'direct' },
+						],
+						default: 'any',
+						description: 'Use "Collection (any)" for one-to-many properties (Lists, Tags, OtherProperties) or "Direct Navigation" for single navigation properties (City, State, Country, Owner)',
+					},
+					{
+						displayName: 'Navigation Property',
+						name: 'collection',
+						type: 'string',
+						default: '',
+						description: 'The navigation property name (e.g., Lists, Tags, City, State, Owner)',
+						placeholder: 'Lists',
+						required: true,
+					},
+					{
+						displayName: 'Field',
+						name: 'field',
+						type: 'string',
+						default: '',
+						description: 'The field to filter on (e.g., ListId, TagId, Id, Name)',
+						placeholder: 'ListId',
+						required: true,
+					},
+					{
+						displayName: 'Operator',
+						name: 'operator',
+						type: 'options',
+						options: [
+							{ name: 'Equals (eq)', value: 'eq' },
+							{ name: 'Not Equals (ne)', value: 'ne' },
+							{ name: 'Greater Than (gt)', value: 'gt' },
+							{ name: 'Greater Than or Equal (ge)', value: 'ge' },
+							{ name: 'Less Than (lt)', value: 'lt' },
+							{ name: 'Less Than or Equal (le)', value: 'le' },
+						],
+						default: 'eq',
+						description: 'The comparison operator',
+					},
+					{
+						displayName: 'Value',
+						name: 'value',
+						type: 'string',
+						default: '',
+						description: 'The value to compare against. Numbers are auto-detected.',
+						placeholder: '11002349',
+						required: true,
+					},
+					{
+						displayName: 'Logical Operator',
+						name: 'logicalOperator',
+						type: 'options',
+						options: [
+							{ name: 'AND', value: 'and' },
+							{ name: 'OR', value: 'or' },
+						],
+						default: 'and',
+						description: 'Logical operator to combine with the next filter (ignored for the last one)',
+					},
+				],
+			},
+		],
+	},
+
 	// ─── $expand builder ─────────────────────────────────────────────────────
 	{
 		displayName: 'Use Expand Builder',
@@ -477,6 +567,15 @@ interface CustomPropertyFilter {
 	isNumeric: boolean;
 }
 
+interface CollectionFilter {
+	filterType: string;
+	collection: string;
+	field: string;
+	operator: string;
+	value: string;
+	logicalOperator: string;
+}
+
 interface ExpandRelation {
 	property: string;
 	select: string;
@@ -519,6 +618,7 @@ function formatFilterValue(value: string, valueType: string): string {
 export function buildFilterString(
 	conditions: FilterCondition[],
 	customFilters: CustomPropertyFilter[],
+	collectionFilters?: CollectionFilter[],
 ): string {
 	const parts: string[] = [];
 
@@ -556,6 +656,35 @@ export function buildFilterString(
 			parts.push('and');
 		}
 		parts.push(customExpr);
+	}
+
+	// Navigation property filters (any() lambda or direct navigation)
+	if (collectionFilters && collectionFilters.length > 0) {
+		const collectionParts: string[] = [];
+		for (let i = 0; i < collectionFilters.length; i++) {
+			const cf = collectionFilters[i];
+			const val = /^\d+(\.\d+)?$/.test(cf.value.trim()) ? cf.value.trim() : `'${cf.value.replace(/'/g, "''")}'`;
+			const filterType = cf.filterType || 'any';
+
+			if (filterType === 'direct') {
+				// Direct navigation: City/Id eq 3941
+				collectionParts.push(`${cf.collection}/${cf.field} ${cf.operator} ${val}`);
+			} else {
+				// Collection any() lambda: Lists/any(l: l/ListId eq 123)
+				const alias = cf.collection.charAt(0).toLowerCase();
+				collectionParts.push(
+					`${cf.collection}/any(${alias}: ${alias}/${cf.field} ${cf.operator} ${val})`,
+				);
+			}
+			if (i < collectionFilters.length - 1) {
+				collectionParts.push(cf.logicalOperator);
+			}
+		}
+		const collectionExpr = collectionParts.join(' ');
+		if (parts.length > 0) {
+			parts.push('and');
+		}
+		parts.push(collectionExpr);
 	}
 
 	return parts.join(' ');

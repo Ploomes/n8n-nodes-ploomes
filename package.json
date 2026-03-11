@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-ploomes",
-  "version": "0.1.3",
+  "version": "0.1.9",
   "description": "n8n community node for Ploomes CRM API",
   "keywords": [
     "n8n-community-node-package",
@@ -12,7 +12,8 @@
   "license": "MIT",
   "homepage": "https://github.com/Ploomes/n8n-nodes-ploomes",
   "author": {
-    "name": "Ploomes",
+    "name": "Caio Lopes",
+    "email": "caio.lopes@ploomes.com",
     "url": "https://www.ploomes.com"
   },
   "repository": {

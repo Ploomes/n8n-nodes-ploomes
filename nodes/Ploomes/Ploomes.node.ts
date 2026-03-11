@@ -1,10 +1,10 @@
 import {
 	IExecuteFunctions,
 	IHttpRequestMethods,
+	IHttpRequestOptions,
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
-	IRequestOptions,
 	NodeConnectionTypes,
 	NodeOperationError,
 } from 'n8n-workflow';
@@ -105,7 +105,7 @@ export class Ploomes implements INodeType {
 								logicalOperator: string;
 							}>;
 
-							const customPropertyFiltersData = this.getNodeParameter(
+								const customPropertyFiltersData = this.getNodeParameter(
 								'customPropertyFilters.filters',
 								i,
 								[],
@@ -117,7 +117,20 @@ export class Ploomes implements INodeType {
 								isNumeric: boolean;
 							}>;
 
-							const filterStr = buildFilterString(filterConditionsData, customPropertyFiltersData);
+								const collectionFiltersData = this.getNodeParameter(
+								'collectionFilters.filters',
+								i,
+								[],
+							) as Array<{
+								filterType: string;
+								collection: string;
+								field: string;
+								operator: string;
+								value: string;
+								logicalOperator: string;
+							}>;
+
+							const filterStr = buildFilterString(filterConditionsData, customPropertyFiltersData, collectionFiltersData);
 							if (filterStr) {
 								qs['$filter'] = filterStr;
 							}
@@ -207,33 +220,44 @@ export class Ploomes implements INodeType {
 					}
 				}
 
-				const options: IRequestOptions = {
+				const options: IHttpRequestOptions = {
 					method,
-					url,
-					baseURL: 'https://api2.ploomes.com',
+					url: `https://api2.ploomes.com${url}`,
 					qs,
-					json: true,
 				};
 
 				if (body) {
-					options.body = body;
+					options.body = body as IHttpRequestOptions['body'];
+					options.headers = { 'Content-Type': 'application/json' };
 				}
 
-				const response = await this.helpers.requestWithAuthentication.call(
+				const response = await this.helpers.httpRequestWithAuthentication.call(
 					this,
 					'ploomesApi',
 					options,
 				);
 
-				const responseData = typeof response === 'string' ? JSON.parse(response) : response;
+					// Handle empty responses (e.g., DELETE returns 200 with no body)
+					if (response === undefined || response === null || response === '') {
+						successData.push({
+							json: {
+								success: true,
+								resource,
+								operation,
+								timestamp: new Date().toISOString(),
+							},
+						});
+					} else {
+						const responseData = typeof response === 'string' ? JSON.parse(response) : response;
 
-				if (responseData.value && Array.isArray(responseData.value)) {
-					for (const item of responseData.value) {
-						successData.push({ json: item });
+						if (responseData.value && Array.isArray(responseData.value)) {
+							for (const item of responseData.value) {
+								successData.push({ json: item });
+							}
+						} else {
+							successData.push({ json: responseData });
+						}
 					}
-				} else {
-					successData.push({ json: responseData });
-				}
 			} catch (error) {
 				const err = error as Error & {
 					httpCode?: string;
