@@ -1,10 +1,10 @@
 import {
 	IExecuteFunctions,
 	IHttpRequestMethods,
+	IHttpRequestOptions,
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
-	IRequestOptions,
 	NodeConnectionTypes,
 	NodeOperationError,
 } from 'n8n-workflow';
@@ -220,19 +220,18 @@ export class Ploomes implements INodeType {
 					}
 				}
 
-				const options: IRequestOptions = {
+				const options: IHttpRequestOptions = {
 					method,
-					url,
-					baseURL: 'https://api2.ploomes.com',
+					url: `https://api2.ploomes.com/${url}`,
 					qs,
-					json: true,
 				};
 
 				if (body) {
-					options.body = body;
+					options.body = body as IHttpRequestOptions['body'];
+					options.headers = { 'Content-Type': 'application/json' };
 				}
 
-				const response = await this.helpers.requestWithAuthentication.call(
+				const response = await this.helpers.httpRequestWithAuthentication.call(
 					this,
 					'ploomesApi',
 					options,
