@@ -27,7 +27,7 @@ export class Ploomes implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Ploomes CRM',
 		name: 'ploomes',
-		icon: 'file:ploomes.svg',
+		icon: 'file:ploomes.png',
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
@@ -50,16 +50,6 @@ export class Ploomes implements INodeType {
 			...idFields,
 			...odataOptions,
 			...bodyFields,
-			{
-				displayName: 'Timeout (ms)',
-				name: 'timeout',
-				type: 'number',
-				default: 30000,
-				description: 'Request timeout in milliseconds. Requests exceeding this time are routed to the Timeout output. Default: 30000 (30s).',
-				typeOptions: {
-					minValue: 1000,
-				},
-			},
 		],
 	};
 
@@ -217,15 +207,12 @@ export class Ploomes implements INodeType {
 					}
 				}
 
-				const timeoutMs = this.getNodeParameter('timeout', i, 30000) as number;
-
 				const options: IRequestOptions = {
 					method,
 					url,
 					baseURL: 'https://api2.ploomes.com',
 					qs,
 					json: true,
-					timeout: timeoutMs,
 				};
 
 				if (body) {
@@ -248,20 +235,25 @@ export class Ploomes implements INodeType {
 					successData.push({ json: responseData });
 				}
 			} catch (error) {
-				const err = error as Error & { code?: string; cause?: { code?: string } };
-				const isTimeout =
-					err.code === 'ETIMEDOUT' ||
-					err.code === 'ESOCKETTIMEDOUT' ||
-					err.code === 'ECONNABORTED' ||
-					err.cause?.code === 'ETIMEDOUT' ||
-					err.cause?.code === 'UND_ERR_CONNECT_TIMEOUT' ||
-					err.message?.includes('timeout') ||
-					err.message?.includes('Timeout');
+				const err = error as Error & {
+					httpCode?: string;
+					statusCode?: number;
+					cause?: { code?: string };
+				};
+
+				const httpCode =
+					err.statusCode ??
+					(err.httpCode ? Number(err.httpCode) : null) ??
+					((err as NodeOperationError).context?.httpCode
+						? Number((err as NodeOperationError).context?.httpCode)
+						: null);
+
+				const isTimeout = httpCode === 408 || httpCode === 504;
 
 				const errorPayload: INodeExecutionData = {
 					json: {
 						error: err.message,
-						statusCode: (err as NodeOperationError).context?.httpCode ?? null,
+						statusCode: httpCode,
 						isTimeout,
 						resource,
 						operation,
