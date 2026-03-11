@@ -105,7 +105,7 @@ export class Ploomes implements INodeType {
 								logicalOperator: string;
 							}>;
 
-							const customPropertyFiltersData = this.getNodeParameter(
+								const customPropertyFiltersData = this.getNodeParameter(
 								'customPropertyFilters.filters',
 								i,
 								[],
@@ -117,7 +117,19 @@ export class Ploomes implements INodeType {
 								isNumeric: boolean;
 							}>;
 
-							const filterStr = buildFilterString(filterConditionsData, customPropertyFiltersData);
+							const collectionFiltersData = this.getNodeParameter(
+								'collectionFilters.filters',
+								i,
+								[],
+							) as Array<{
+								collection: string;
+								field: string;
+								operator: string;
+								value: string;
+								logicalOperator: string;
+							}>;
+
+							const filterStr = buildFilterString(filterConditionsData, customPropertyFiltersData, collectionFiltersData);
 							if (filterStr) {
 								qs['$filter'] = filterStr;
 							}

@@ -254,6 +254,85 @@ export const odataOptions: INodeProperties[] = [
 		],
 	},
 
+	// ─── Collection Filter (any/all lambda) ─────────────────────────────────
+	{
+		displayName: 'Collection Filters (any)',
+		name: 'collectionFilters',
+		type: 'fixedCollection',
+		typeOptions: {
+			multipleValues: true,
+		},
+		default: {},
+		description: 'Filter by collection navigation properties using OData any() lambda. Example: Lists/any(l: l/ListId eq 123). Combined with AND to the main filter.',
+		displayOptions: {
+			show: {
+				operation: ['getAll'],
+				useFilterBuilder: [true],
+			},
+		},
+		options: [
+			{
+				displayName: 'Filters',
+				name: 'filters',
+				values: [
+					{
+						displayName: 'Collection',
+						name: 'collection',
+						type: 'string',
+						default: '',
+						description: 'The collection navigation property name (e.g., Lists, Tags, Phones, Emails, Products)',
+						placeholder: 'Lists',
+						required: true,
+					},
+					{
+						displayName: 'Field',
+						name: 'field',
+						type: 'string',
+						default: '',
+						description: 'The field inside the collection to filter on (e.g., ListId, TagId, Id)',
+						placeholder: 'ListId',
+						required: true,
+					},
+					{
+						displayName: 'Operator',
+						name: 'operator',
+						type: 'options',
+						options: [
+							{ name: 'Equals (eq)', value: 'eq' },
+							{ name: 'Not Equals (ne)', value: 'ne' },
+							{ name: 'Greater Than (gt)', value: 'gt' },
+							{ name: 'Greater Than or Equal (ge)', value: 'ge' },
+							{ name: 'Less Than (lt)', value: 'lt' },
+							{ name: 'Less Than or Equal (le)', value: 'le' },
+						],
+						default: 'eq',
+						description: 'The comparison operator',
+					},
+					{
+						displayName: 'Value',
+						name: 'value',
+						type: 'string',
+						default: '',
+						description: 'The value to compare against. Numbers are auto-detected.',
+						placeholder: '11002349',
+						required: true,
+					},
+					{
+						displayName: 'Logical Operator',
+						name: 'logicalOperator',
+						type: 'options',
+						options: [
+							{ name: 'AND', value: 'and' },
+							{ name: 'OR', value: 'or' },
+						],
+						default: 'and',
+						description: 'Logical operator to combine with the next collection filter (ignored for the last one)',
+					},
+				],
+			},
+		],
+	},
+
 	// ─── $expand builder ─────────────────────────────────────────────────────
 	{
 		displayName: 'Use Expand Builder',
@@ -477,6 +556,14 @@ interface CustomPropertyFilter {
 	isNumeric: boolean;
 }
 
+interface CollectionFilter {
+	collection: string;
+	field: string;
+	operator: string;
+	value: string;
+	logicalOperator: string;
+}
+
 interface ExpandRelation {
 	property: string;
 	select: string;
@@ -519,6 +606,7 @@ function formatFilterValue(value: string, valueType: string): string {
 export function buildFilterString(
 	conditions: FilterCondition[],
 	customFilters: CustomPropertyFilter[],
+	collectionFilters?: CollectionFilter[],
 ): string {
 	const parts: string[] = [];
 
@@ -556,6 +644,27 @@ export function buildFilterString(
 			parts.push('and');
 		}
 		parts.push(customExpr);
+	}
+
+	// Collection filters (any() lambda) - e.g., Lists/any(l: l/ListId eq 123)
+	if (collectionFilters && collectionFilters.length > 0) {
+		const collectionParts: string[] = [];
+		for (let i = 0; i < collectionFilters.length; i++) {
+			const cf = collectionFilters[i];
+			const alias = cf.collection.charAt(0).toLowerCase();
+			const val = /^\d+(\.\d+)?$/.test(cf.value.trim()) ? cf.value.trim() : `'${cf.value.replace(/'/g, "''")}'`;
+			collectionParts.push(
+				`${cf.collection}/any(${alias}: ${alias}/${cf.field} ${cf.operator} ${val})`,
+			);
+			if (i < collectionFilters.length - 1) {
+				collectionParts.push(cf.logicalOperator);
+			}
+		}
+		const collectionExpr = collectionParts.join(' ');
+		if (parts.length > 0) {
+			parts.push('and');
+		}
+		parts.push(collectionExpr);
 	}
 
 	return parts.join(' ');
