@@ -1,0 +1,22 @@
+{
+	"node": "n8n-nodes-base.ploomes",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": ["Sales"],
+	"resources": {
+		"credentialDocumentation": [
+			{
+				"url": "https://developers.ploomes.com/"
+			}
+		],
+		"primaryDocumentation": [
+			{
+				"url": "https://developers.ploomes.com/"
+			}
+		]
+	},
+	"alias": ["Ploomes", "CRM", "Sales", "Deals", "Contacts"],
+	"subcategories": {
+		"Sales": ["CRM"]
+	}
+}
