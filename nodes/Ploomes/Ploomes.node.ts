@@ -6,6 +6,7 @@ import {
 	INodeTypeDescription,
 	IRequestOptions,
 	NodeConnectionTypes,
+	NodeOperationError,
 } from 'n8n-workflow';
 
 import {
@@ -26,7 +27,7 @@ export class Ploomes implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Ploomes CRM',
 		name: 'ploomes',
-		icon: 'file:ploomes.svg',
+		icon: 'file:ploomes.png',
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
@@ -35,7 +36,8 @@ export class Ploomes implements INodeType {
 			name: 'Ploomes CRM',
 		},
 		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		outputs: [NodeConnectionTypes.Main, NodeConnectionTypes.Main, NodeConnectionTypes.Main],
+		outputNames: ['Sucesso', 'Erro', 'Timeout'],
 		credentials: [
 			{
 				name: 'ploomesApi',
@@ -53,12 +55,15 @@ export class Ploomes implements INodeType {
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const items = this.getInputData();
-		const returnData: INodeExecutionData[] = [];
+		const successData: INodeExecutionData[] = [];
+		const errorData: INodeExecutionData[] = [];
+		const timeoutData: INodeExecutionData[] = [];
 
 		for (let i = 0; i < items.length; i++) {
+			const resource = this.getNodeParameter('resource', i) as string;
+			const operation = this.getNodeParameter('operation', i) as string;
+
 			try {
-				const resource = this.getNodeParameter('resource', i) as string;
-				const operation = this.getNodeParameter('operation', i) as string;
 
 				const endpoint = resourceEndpoints[resource];
 				if (!endpoint) {
@@ -224,22 +229,50 @@ export class Ploomes implements INodeType {
 
 				if (responseData.value && Array.isArray(responseData.value)) {
 					for (const item of responseData.value) {
-						returnData.push({ json: item });
+						successData.push({ json: item });
 					}
 				} else {
-					returnData.push({ json: responseData });
+					successData.push({ json: responseData });
 				}
 			} catch (error) {
-				if (this.continueOnFail()) {
-					returnData.push({
-						json: { error: (error as Error).message },
-					});
-					continue;
+				const err = error as Error & {
+					httpCode?: string;
+					statusCode?: number;
+					cause?: { code?: string };
+				};
+
+				const httpCode =
+					err.statusCode ??
+					(err.httpCode ? Number(err.httpCode) : null) ??
+					((err as NodeOperationError).context?.httpCode
+						? Number((err as NodeOperationError).context?.httpCode)
+						: null);
+
+				const isTimeout = httpCode === 408 || httpCode === 504;
+
+				const errorPayload: INodeExecutionData = {
+					json: {
+						error: err.message,
+						statusCode: httpCode,
+						isTimeout,
+						resource,
+						operation,
+						timestamp: new Date().toISOString(),
+					},
+				};
+
+				if (isTimeout) {
+					timeoutData.push(errorPayload);
+				} else {
+					errorData.push(errorPayload);
 				}
-				throw error;
+
+				if (!this.continueOnFail() && !isTimeout) {
+					throw error;
+				}
 			}
 		}
 
-		return [returnData];
+		return [successData, errorData, timeoutData];
 	}
 }
