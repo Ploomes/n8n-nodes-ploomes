@@ -507,6 +507,11 @@ function formatFilterValue(value: string, valueType: string): string {
 			return value;
 		case 'string':
 		default:
+			// Auto-detect numeric values to avoid quoting numbers as strings
+			// This prevents issues like Id eq '123' which OData rejects
+			if (/^\d+(\.\d+)?$/.test(value.trim())) {
+				return value.trim();
+			}
 			return `'${value.replace(/'/g, "''")}'`;
 	}
 }
