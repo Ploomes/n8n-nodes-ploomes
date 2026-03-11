@@ -238,15 +238,27 @@ export class Ploomes implements INodeType {
 					options,
 				);
 
-				const responseData = typeof response === 'string' ? JSON.parse(response) : response;
+					// Handle empty responses (e.g., DELETE returns 200 with no body)
+					if (response === undefined || response === null || response === '') {
+						successData.push({
+							json: {
+								success: true,
+								resource,
+								operation,
+								timestamp: new Date().toISOString(),
+							},
+						});
+					} else {
+						const responseData = typeof response === 'string' ? JSON.parse(response) : response;
 
-				if (responseData.value && Array.isArray(responseData.value)) {
-					for (const item of responseData.value) {
-						successData.push({ json: item });
+						if (responseData.value && Array.isArray(responseData.value)) {
+							for (const item of responseData.value) {
+								successData.push({ json: item });
+							}
+						} else {
+							successData.push({ json: responseData });
+						}
 					}
-				} else {
-					successData.push({ json: responseData });
-				}
 			} catch (error) {
 				const err = error as Error & {
 					httpCode?: string;
