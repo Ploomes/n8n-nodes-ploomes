@@ -12,7 +12,8 @@
   "license": "MIT",
   "homepage": "https://github.com/Ploomes/n8n-nodes-ploomes",
   "author": {
-    "name": "Ploomes",
+    "name": "Caio Lopes",
+    "email": "caio.lopes@ploomes.com",
     "url": "https://www.ploomes.com"
   },
   "repository": {
