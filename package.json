@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-ploomes",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "n8n community node for Ploomes CRM API",
   "keywords": [
     "n8n-community-node-package",
@@ -24,8 +24,8 @@
     "build": "tsc && gulp build:icons",
     "dev": "tsc --watch",
     "format": "prettier nodes credentials --write",
-        "lint": "eslint nodes credentials package.json --ext .ts",
-        "lintfix": "eslint nodes credentials package.json --ext .ts --fix",
+    "lint": "eslint nodes credentials package.json --ext .ts",
+    "lintfix": "eslint nodes credentials package.json --ext .ts --fix",
     "prepublishOnly": "npm run build"
   },
   "files": [
