@@ -254,16 +254,16 @@ export const odataOptions: INodeProperties[] = [
 		],
 	},
 
-	// ─── Collection Filter (any/all lambda) ─────────────────────────────────
+	// ─── Navigation Property Filters ────────────────────────────────────────
 	{
-		displayName: 'Collection Filters (any)',
+		displayName: 'Navigation Property Filters',
 		name: 'collectionFilters',
 		type: 'fixedCollection',
 		typeOptions: {
 			multipleValues: true,
 		},
 		default: {},
-		description: 'Filter by collection navigation properties using OData any() lambda. Example: Lists/any(l: l/ListId eq 123). Combined with AND to the main filter.',
+		description: 'Filter by navigation properties. Use "Collection (any)" for one-to-many (e.g., Lists/any(l: l/ListId eq 123)) or "Direct Navigation" for single properties (e.g., City/Id eq 3941). Combined with AND to the main filter.',
 		displayOptions: {
 			show: {
 				operation: ['getAll'],
@@ -276,11 +276,22 @@ export const odataOptions: INodeProperties[] = [
 				name: 'filters',
 				values: [
 					{
-						displayName: 'Collection',
+						displayName: 'Filter Type',
+						name: 'filterType',
+						type: 'options',
+						options: [
+							{ name: 'Collection (any) — e.g., Lists/any(l: l/ListId eq 123)', value: 'any' },
+							{ name: 'Direct Navigation — e.g., City/Id eq 3941', value: 'direct' },
+						],
+						default: 'any',
+						description: 'Use "Collection (any)" for one-to-many properties (Lists, Tags, OtherProperties) or "Direct Navigation" for single navigation properties (City, State, Country, Owner)',
+					},
+					{
+						displayName: 'Navigation Property',
 						name: 'collection',
 						type: 'string',
 						default: '',
-						description: 'The collection navigation property name (e.g., Lists, Tags, Phones, Emails, Products)',
+						description: 'The navigation property name (e.g., Lists, Tags, City, State, Owner)',
 						placeholder: 'Lists',
 						required: true,
 					},
@@ -289,7 +300,7 @@ export const odataOptions: INodeProperties[] = [
 						name: 'field',
 						type: 'string',
 						default: '',
-						description: 'The field inside the collection to filter on (e.g., ListId, TagId, Id)',
+						description: 'The field to filter on (e.g., ListId, TagId, Id, Name)',
 						placeholder: 'ListId',
 						required: true,
 					},
@@ -326,7 +337,7 @@ export const odataOptions: INodeProperties[] = [
 							{ name: 'OR', value: 'or' },
 						],
 						default: 'and',
-						description: 'Logical operator to combine with the next collection filter (ignored for the last one)',
+						description: 'Logical operator to combine with the next filter (ignored for the last one)',
 					},
 				],
 			},
@@ -557,6 +568,7 @@ interface CustomPropertyFilter {
 }
 
 interface CollectionFilter {
+	filterType: string;
 	collection: string;
 	field: string;
 	operator: string;
@@ -646,16 +658,24 @@ export function buildFilterString(
 		parts.push(customExpr);
 	}
 
-	// Collection filters (any() lambda) - e.g., Lists/any(l: l/ListId eq 123)
+	// Navigation property filters (any() lambda or direct navigation)
 	if (collectionFilters && collectionFilters.length > 0) {
 		const collectionParts: string[] = [];
 		for (let i = 0; i < collectionFilters.length; i++) {
 			const cf = collectionFilters[i];
-			const alias = cf.collection.charAt(0).toLowerCase();
 			const val = /^\d+(\.\d+)?$/.test(cf.value.trim()) ? cf.value.trim() : `'${cf.value.replace(/'/g, "''")}'`;
-			collectionParts.push(
-				`${cf.collection}/any(${alias}: ${alias}/${cf.field} ${cf.operator} ${val})`,
-			);
+			const filterType = cf.filterType || 'any';
+
+			if (filterType === 'direct') {
+				// Direct navigation: City/Id eq 3941
+				collectionParts.push(`${cf.collection}/${cf.field} ${cf.operator} ${val}`);
+			} else {
+				// Collection any() lambda: Lists/any(l: l/ListId eq 123)
+				const alias = cf.collection.charAt(0).toLowerCase();
+				collectionParts.push(
+					`${cf.collection}/any(${alias}: ${alias}/${cf.field} ${cf.operator} ${val})`,
+				);
+			}
 			if (i < collectionFilters.length - 1) {
 				collectionParts.push(cf.logicalOperator);
 			}

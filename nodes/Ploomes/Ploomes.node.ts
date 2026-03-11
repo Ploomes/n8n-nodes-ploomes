@@ -117,11 +117,12 @@ export class Ploomes implements INodeType {
 								isNumeric: boolean;
 							}>;
 
-							const collectionFiltersData = this.getNodeParameter(
+								const collectionFiltersData = this.getNodeParameter(
 								'collectionFilters.filters',
 								i,
 								[],
 							) as Array<{
+								filterType: string;
 								collection: string;
 								field: string;
 								operator: string;
