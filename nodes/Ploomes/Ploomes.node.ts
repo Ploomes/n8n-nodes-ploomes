@@ -6,6 +6,7 @@ import {
 	INodeTypeDescription,
 	IRequestOptions,
 	NodeConnectionTypes,
+	NodeOperationError,
 } from 'n8n-workflow';
 
 import {
@@ -35,7 +36,8 @@ export class Ploomes implements INodeType {
 			name: 'Ploomes CRM',
 		},
 		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		outputs: [NodeConnectionTypes.Main, NodeConnectionTypes.Main, NodeConnectionTypes.Main],
+		outputNames: ['Sucesso', 'Erro', 'Timeout'],
 		credentials: [
 			{
 				name: 'ploomesApi',
@@ -48,17 +50,30 @@ export class Ploomes implements INodeType {
 			...idFields,
 			...odataOptions,
 			...bodyFields,
+			{
+				displayName: 'Timeout (ms)',
+				name: 'timeout',
+				type: 'number',
+				default: 30000,
+				description: 'Request timeout in milliseconds. Requests exceeding this time are routed to the Timeout output. Default: 30000 (30s).',
+				typeOptions: {
+					minValue: 1000,
+				},
+			},
 		],
 	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const items = this.getInputData();
-		const returnData: INodeExecutionData[] = [];
+		const successData: INodeExecutionData[] = [];
+		const errorData: INodeExecutionData[] = [];
+		const timeoutData: INodeExecutionData[] = [];
 
 		for (let i = 0; i < items.length; i++) {
+			const resource = this.getNodeParameter('resource', i) as string;
+			const operation = this.getNodeParameter('operation', i) as string;
+
 			try {
-				const resource = this.getNodeParameter('resource', i) as string;
-				const operation = this.getNodeParameter('operation', i) as string;
 
 				const endpoint = resourceEndpoints[resource];
 				if (!endpoint) {
@@ -202,12 +217,15 @@ export class Ploomes implements INodeType {
 					}
 				}
 
+				const timeoutMs = this.getNodeParameter('timeout', i, 30000) as number;
+
 				const options: IRequestOptions = {
 					method,
 					url,
 					baseURL: 'https://api2.ploomes.com',
 					qs,
 					json: true,
+					timeout: timeoutMs,
 				};
 
 				if (body) {
@@ -224,22 +242,45 @@ export class Ploomes implements INodeType {
 
 				if (responseData.value && Array.isArray(responseData.value)) {
 					for (const item of responseData.value) {
-						returnData.push({ json: item });
+						successData.push({ json: item });
 					}
 				} else {
-					returnData.push({ json: responseData });
+					successData.push({ json: responseData });
 				}
 			} catch (error) {
-				if (this.continueOnFail()) {
-					returnData.push({
-						json: { error: (error as Error).message },
-					});
-					continue;
+				const err = error as Error & { code?: string; cause?: { code?: string } };
+				const isTimeout =
+					err.code === 'ETIMEDOUT' ||
+					err.code === 'ESOCKETTIMEDOUT' ||
+					err.code === 'ECONNABORTED' ||
+					err.cause?.code === 'ETIMEDOUT' ||
+					err.cause?.code === 'UND_ERR_CONNECT_TIMEOUT' ||
+					err.message?.includes('timeout') ||
+					err.message?.includes('Timeout');
+
+				const errorPayload: INodeExecutionData = {
+					json: {
+						error: err.message,
+						statusCode: (err as NodeOperationError).context?.httpCode ?? null,
+						isTimeout,
+						resource,
+						operation,
+						timestamp: new Date().toISOString(),
+					},
+				};
+
+				if (isTimeout) {
+					timeoutData.push(errorPayload);
+				} else {
+					errorData.push(errorPayload);
 				}
-				throw error;
+
+				if (!this.continueOnFail() && !isTimeout) {
+					throw error;
+				}
 			}
 		}
 
-		return [returnData];
+		return [successData, errorData, timeoutData];
 	}
 }
