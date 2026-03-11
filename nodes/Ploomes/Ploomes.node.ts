@@ -222,7 +222,7 @@ export class Ploomes implements INodeType {
 
 				const options: IHttpRequestOptions = {
 					method,
-					url: `https://api2.ploomes.com/${url}`,
+					url: `https://api2.ploomes.com${url}`,
 					qs,
 				};
 
