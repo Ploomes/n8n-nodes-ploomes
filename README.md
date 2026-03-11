@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="nodes/Ploomes/ploomes.svg" alt="Ploomes CRM" width="80" />
+  <img src="nodes/Ploomes/ploomes.png" alt="Ploomes CRM" width="80" />
 </p>
 
 <h1 align="center">n8n-nodes-ploomes</h1>
