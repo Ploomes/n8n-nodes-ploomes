@@ -199,14 +199,15 @@ export const odataOptions: INodeProperties[] = [
 						name: 'valueType',
 						type: 'options',
 						options: [
-							{ name: 'String', value: 'string' },
+							{ name: 'Auto (detect)', value: 'auto' },
+							{ name: 'String (always quote)', value: 'string' },
 							{ name: 'Number', value: 'number' },
 							{ name: 'Boolean', value: 'boolean' },
 							{ name: 'Date', value: 'date' },
 							{ name: 'Null', value: 'null' },
 						],
-						default: 'string',
-						description: 'The type of the value (determines quoting behavior)',
+						default: 'auto',
+						description: 'The type of the value. "Auto" detects numbers automatically. Use "String" to force quoting for fields like Code that contain numeric-looking text.',
 					},
 					{
 						displayName: 'Logical Operator',
@@ -654,9 +655,11 @@ function formatFilterValue(value: string, valueType: string): string {
 		case 'date':
 			return value;
 		case 'string':
+			// Always quote — user explicitly chose String type
+			return `'${value.replace(/'/g, "''")}'`;
+		case 'auto':
 		default:
-			// Auto-detect numeric values to avoid quoting numbers as strings
-			// This prevents issues like Id eq '123' which OData rejects
+			// Auto-detect: leave numbers unquoted, quote everything else
 			if (/^\d+(\.\d+)?$/.test(value.trim())) {
 				return value.trim();
 			}
