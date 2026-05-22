@@ -6,6 +6,7 @@ module.exports = [
 		ignores: ['dist/**', 'node_modules/**', 'gulpfile.js'],
 	},
 	{
+		files: ['nodes/**/*.ts', 'credentials/**/*.ts', 'package.json'],
 		plugins: {
 			'n8n-nodes-base': n8nNodesBase,
 		},
