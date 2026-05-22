@@ -1,4 +1,5 @@
 import {
+	IDataObject,
 	IExecuteFunctions,
 	IHttpRequestMethods,
 	IHttpRequestOptions,
@@ -22,6 +23,39 @@ import {
 	buildFilterString,
 	buildExpandString,
 } from './ODataOptions';
+
+// ─── In-memory cache ────────────────────────────────────────────────────────
+
+interface CacheEntry {
+	data: unknown;
+	timestamp: number;
+}
+
+const responseCache = new Map<string, CacheEntry>();
+
+function getCacheKey(url: string, qs: Record<string, string>): string {
+	const sortedQs = Object.keys(qs)
+		.sort()
+		.map((k) => `${k}=${qs[k]}`)
+		.join('&');
+	return `${url}?${sortedQs}`;
+}
+
+function getCachedResponse(key: string, ttlSeconds: number): unknown | undefined {
+	const entry = responseCache.get(key);
+	if (!entry) return undefined;
+	if (Date.now() - entry.timestamp > ttlSeconds * 1000) {
+		responseCache.delete(key);
+		return undefined;
+	}
+	return entry.data;
+}
+
+function setCacheResponse(key: string, data: unknown): void {
+	responseCache.set(key, { data, timestamp: Date.now() });
+}
+
+// ─── Node implementation ────────────────────────────────────────────────────
 
 export class Ploomes implements INodeType {
 	description: INodeTypeDescription = {
@@ -220,9 +254,11 @@ export class Ploomes implements INodeType {
 					}
 				}
 
+				const fullUrl = `https://api2.ploomes.com${url}`;
+
 				const options: IHttpRequestOptions = {
 					method,
-					url: `https://api2.ploomes.com${url}`,
+					url: fullUrl,
 					qs,
 				};
 
@@ -231,11 +267,71 @@ export class Ploomes implements INodeType {
 					options.headers = { 'Content-Type': 'application/json' };
 				}
 
-				const response = await this.helpers.httpRequestWithAuthentication.call(
-					this,
-					'ploomesApi',
-					options,
-				);
+				// ─── Cache logic (GET only) ───────────────────────────────────
+				const cacheStrategy = operation === 'getAll'
+					? (this.getNodeParameter('cacheStrategy', i, 'disabled') as string)
+					: 'disabled';
+				const cacheTtl = cacheStrategy !== 'disabled'
+					? (this.getNodeParameter('cacheTtl', i, 300) as number)
+					: 0;
+				const cacheKey = cacheStrategy !== 'disabled'
+					? getCacheKey(fullUrl, qs)
+					: '';
+
+				// Cache First: return cached data if available
+				if (cacheStrategy === 'cacheFirst') {
+					const cached = getCachedResponse(cacheKey, cacheTtl);
+					if (cached !== undefined) {
+						const cachedData = cached as Record<string, unknown>;
+						if (cachedData.value && Array.isArray(cachedData.value)) {
+							for (const item of cachedData.value as Array<Record<string, unknown>>) {
+								successData.push({ json: { ...item, _fromCache: true } });
+							}
+						} else {
+							successData.push({ json: { ...cachedData, _fromCache: true } });
+						}
+						continue;
+					}
+				}
+
+				let response: unknown;
+				let requestFailed = false;
+
+				try {
+					response = await this.helpers.httpRequestWithAuthentication.call(
+						this,
+						'ploomesApi',
+						options,
+					);
+				} catch (requestError) {
+					requestFailed = true;
+
+					// Fallback: try to serve from cache on error
+					if (cacheStrategy !== 'disabled') {
+						const cached = getCachedResponse(cacheKey, cacheTtl);
+						if (cached !== undefined) {
+							const cachedData = cached as Record<string, unknown>;
+							if (cachedData.value && Array.isArray(cachedData.value)) {
+								for (const item of cachedData.value as Array<Record<string, unknown>>) {
+									successData.push({ json: { ...item, _fromCache: true, _fallback: true } });
+								}
+							} else {
+								successData.push({ json: { ...cachedData, _fromCache: true, _fallback: true } });
+							}
+							continue;
+						}
+					}
+
+					// No cache available — rethrow to enter outer catch
+					throw requestError;
+				}
+
+				if (!requestFailed) {
+					// Store in cache for future use
+					if (cacheStrategy !== 'disabled' && response !== undefined && response !== null && response !== '') {
+						const dataToCache = typeof response === 'string' ? JSON.parse(response as string) : response;
+						setCacheResponse(cacheKey, dataToCache);
+					}
 
 					// Handle empty responses (e.g., DELETE returns 200 with no body)
 					if (response === undefined || response === null || response === '') {
@@ -248,16 +344,17 @@ export class Ploomes implements INodeType {
 							},
 						});
 					} else {
-						const responseData = typeof response === 'string' ? JSON.parse(response) : response;
+						const responseData = typeof response === 'string' ? JSON.parse(response as string) : response;
 
-						if (responseData.value && Array.isArray(responseData.value)) {
-							for (const item of responseData.value) {
+						if ((responseData as IDataObject).value && Array.isArray((responseData as IDataObject).value)) {
+							for (const item of (responseData as IDataObject).value as IDataObject[]) {
 								successData.push({ json: item });
 							}
 						} else {
-							successData.push({ json: responseData });
+							successData.push({ json: responseData as IDataObject });
 						}
 					}
+				}
 			} catch (error) {
 				const err = error as Error & {
 					httpCode?: string;

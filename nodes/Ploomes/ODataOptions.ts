@@ -3,6 +3,55 @@ import { INodeProperties } from 'n8n-workflow';
 // ─── OData query parameters (shown for GET operations) ──────────────────────
 
 export const odataOptions: INodeProperties[] = [
+	// ─── Cache Strategy ──────────────────────────────────────────────────────
+	{
+		displayName: 'Cache Strategy',
+		name: 'cacheStrategy',
+		type: 'options',
+		options: [
+			{
+				name: 'Desativado',
+				value: 'disabled',
+				description: 'No cache — always fetch from API',
+			},
+			{
+				name: 'Cache First',
+				value: 'cacheFirst',
+				description: 'Use cached response if available and valid; otherwise fetch from API',
+			},
+			{
+				name: 'Fallback Only',
+				value: 'fallbackOnly',
+				description: 'Always fetch from API; use cache only if the request fails',
+			},
+		],
+		default: 'disabled',
+		description: 'How to use in-memory cache for GET requests. Cache persists while n8n is running.',
+		displayOptions: {
+			show: {
+				operation: ['getAll'],
+			},
+		},
+	},
+
+	// ─── Cache TTL ───────────────────────────────────────────────────────────
+	{
+		displayName: 'Cache TTL (Seconds)',
+		name: 'cacheTtl',
+		type: 'number',
+		default: 300,
+		description: 'Time-to-live for cached responses in seconds. Default is 300 (5 minutes).',
+		displayOptions: {
+			show: {
+				operation: ['getAll'],
+				cacheStrategy: ['cacheFirst', 'fallbackOnly'],
+			},
+		},
+		typeOptions: {
+			minValue: 1,
+		},
+	},
+
 	// ─── $top ────────────────────────────────────────────────────────────────
 	{
 		displayName: '$top (Limit)',
@@ -150,14 +199,15 @@ export const odataOptions: INodeProperties[] = [
 						name: 'valueType',
 						type: 'options',
 						options: [
-							{ name: 'String', value: 'string' },
+							{ name: 'Auto (detect)', value: 'auto' },
+							{ name: 'String (always quote)', value: 'string' },
 							{ name: 'Number', value: 'number' },
 							{ name: 'Boolean', value: 'boolean' },
 							{ name: 'Date', value: 'date' },
 							{ name: 'Null', value: 'null' },
 						],
-						default: 'string',
-						description: 'The type of the value (determines quoting behavior)',
+						default: 'auto',
+						description: 'The type of the value. "Auto" detects numbers automatically. Use "String" to force quoting for fields like Code that contain numeric-looking text.',
 					},
 					{
 						displayName: 'Logical Operator',
@@ -605,9 +655,11 @@ function formatFilterValue(value: string, valueType: string): string {
 		case 'date':
 			return value;
 		case 'string':
+			// Always quote — user explicitly chose String type
+			return `'${value.replace(/'/g, "''")}'`;
+		case 'auto':
 		default:
-			// Auto-detect numeric values to avoid quoting numbers as strings
-			// This prevents issues like Id eq '123' which OData rejects
+			// Auto-detect: leave numbers unquoted, quote everything else
 			if (/^\d+(\.\d+)?$/.test(value.trim())) {
 				return value.trim();
 			}
