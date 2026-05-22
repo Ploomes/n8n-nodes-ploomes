@@ -5,7 +5,7 @@
 <h1 align="center">n8n-nodes-ploomes</h1>
 
 <p align="center">
-  <strong>Community node para <a href="https://n8n.io">n8n</a> que integra com a API do <a href="https://www.ploomes.com">Ploomes CRM</a></strong>
+  <strong>Community node for <a href="https://n8n.io">n8n</a> that integrates with the <a href="https://www.ploomes.com">Ploomes CRM</a> API</strong>
 </p>
 
 <p align="center">
@@ -17,35 +17,35 @@
 
 ---
 
-## Sobre
+## About
 
-Este node permite automatizar e integrar o **Ploomes CRM** com centenas de outros apps no n8n. Oferece cobertura completa da API REST, com suporte nativo a OData v4 e construtores visuais para filtros e expansoes complexas.
+This node lets you automate and integrate **Ploomes CRM** with hundreds of other apps in n8n. It provides full REST API coverage with native OData v4 support and visual builders for complex filters and expansions.
 
 ---
 
-## Funcionalidades
+## Features
 
-| Recurso | Descricao |
+| Feature | Description |
 |---|---|
-| **126 acoes** | Cobertura completa de 50 recursos da API |
-| **Credenciais seguras** | Autenticacao via header `User-Key` com teste de conexao |
-| **OData otimizado** | Defaults inteligentes: `$top=1`, `$select=Id`, `$orderby=Id` |
-| **Filter Builder visual** | Construa filtros `$filter` pela interface sem escrever OData |
-| **Expand Builder visual** | Monte `$expand` com `$select`, `$filter` e `$expand` aninhados |
-| **Filtros de propriedades customizadas** | Suporte a `OtherProperties/any(...)` via interface |
-| **Modo raw** | Alterne para modo texto livre para queries OData avancadas |
-| **Acoes especiais** | Deal Win/Lose/Reopen, Task Finish, Quote Review |
-| **Custom API Call** | Recurso generico para endpoints nao mapeados |
+| **126 actions** | Full coverage of 50 API resources |
+| **Secure credentials** | Authentication via `User-Key` header with connection test |
+| **Optimized OData** | Smart defaults: `$top=1`, `$select=Id`, `$orderby=Id` |
+| **Visual Filter Builder** | Build `$filter` queries through the UI without writing OData |
+| **Visual Expand Builder** | Build `$expand` with nested `$select`, `$filter`, and `$expand` |
+| **Custom property filters** | Support for `OtherProperties/any(...)` via the UI |
+| **Raw mode** | Switch to free-text mode for advanced OData queries |
+| **Special actions** | Deal Win/Lose/Reopen, Task Finish, Quote Review |
+| **Custom API Call** | Generic resource for unmapped endpoints |
 
 ---
 
-## Instalacao
+## Installation
 
-### Via n8n (recomendado)
+### Via n8n (recommended)
 
-1. Acesse **Settings > Community Nodes** no seu n8n
-2. Clique em **Install a community node**
-3. Digite `n8n-nodes-ploomes` e instale
+1. Go to **Settings > Community Nodes** in your n8n instance
+2. Click **Install a community node**
+3. Enter `n8n-nodes-ploomes` and install
 
 ### Via npm
 
@@ -54,7 +54,7 @@ cd ~/.n8n/nodes
 npm install n8n-nodes-ploomes
 ```
 
-### Desenvolvimento local
+### Local development
 
 ```bash
 git clone https://github.com/Ploomes/n8n-nodes-ploomes.git
@@ -63,30 +63,30 @@ npm install
 npm run build
 npm link
 
-# Em outro terminal
+# In another terminal
 cd ~/.n8n/nodes
 npm link n8n-nodes-ploomes
 ```
 
 ---
 
-## Configuracao de Credenciais
+## Credentials Setup
 
-1. No n8n, adicione o node **Ploomes CRM** ao seu workflow
-2. Clique em **Select Credential > Create new credential**
-3. Insira sua **User-Key** da API do Ploomes
-4. Clique em **Save** - a conexao sera testada automaticamente
+1. In n8n, add the **Ploomes CRM** node to your workflow
+2. Click **Select Credential > Create new credential**
+3. Enter your Ploomes API **User-Key**
+4. Click **Save** — the connection will be tested automatically
 
-> Para obter sua User-Key, acesse sua conta Ploomes em **Configuracoes > Integracao > API**.
-> Documentacao: [developers.ploomes.com](https://developers.ploomes.com/)
+> To obtain your User-Key, go to your Ploomes account under **Settings > Integration > API**.
+> Documentation: [developers.ploomes.com](https://developers.ploomes.com/)
 
 ---
 
-## Recursos Disponiveis
+## Available Resources
 
-### Entidades Principais
+### Core Entities
 
-| Recurso | Operacoes |
+| Resource | Operations |
 |---|---|
 | **Contact** | Get Many, Create, Update, Delete |
 | **Deal** | Get Many, Create, Update, Delete, Win, Lose, Reopen |
@@ -97,9 +97,9 @@ npm link n8n-nodes-ploomes
 | **Document** | Get Many, Create, Update, Delete |
 | **Interaction Record** | Get Many, Create, Update, Delete |
 
-### Configuracao e Administracao
+### Settings and Administration
 
-| Recurso | Operacoes |
+| Resource | Operations |
 |---|---|
 | **Account** | Get Many, Update |
 | **User** | Get Many, Create, Update |
@@ -109,9 +109,9 @@ npm link n8n-nodes-ploomes
 | **Field** | Get Many, Create, Update, Delete |
 | **Webhook** | Get Many, Create, Update, Delete |
 
-### Sub-recursos de Contato
+### Contact Sub-resources
 
-| Recurso | Operacoes |
+| Resource | Operations |
 |---|---|
 | Contact Line of Business | CRUD |
 | Contact Number of Employees | CRUD |
@@ -121,26 +121,26 @@ npm link n8n-nodes-ploomes
 | Contact Status | Get Many |
 | Contact Type | Get Many |
 
-### Sub-recursos de Negocio
+### Deal Sub-resources
 
-| Recurso | Operacoes |
+| Resource | Operations |
 |---|---|
 | Deal Pipeline | CRUD |
 | Deal Stage | Get Many |
 | Deal Status | Get Many |
 | Deal Loss Reason | Get Many |
 
-### Sub-recursos de Produto
+### Product Sub-resources
 
-| Recurso | Operacoes |
+| Resource | Operations |
 |---|---|
 | Product Family | CRUD |
 | Product Group | CRUD |
 | Product Part | CRUD |
 
-### Outros Recursos
+### Other Resources
 
-| Recurso | Operacoes |
+| Resource | Operations |
 |---|---|
 | City, Country, State | Get Many |
 | Currency | Get Many |
@@ -158,58 +158,58 @@ npm link n8n-nodes-ploomes
 
 ---
 
-## Construtor de Filtros OData
+## OData Filter Builder
 
-O node inclui um construtor visual que permite criar queries `$filter` complexas sem precisar escrever OData manualmente.
+The node includes a visual builder that lets you create complex `$filter` queries without writing OData manually.
 
-### Filtros simples
+### Simple filters
 
-Adicione condicoes com campo, operador e valor:
+Add conditions with field, operator, and value:
 
 ```
-Campo: Name    Operador: contains    Valor: Ploomes    Tipo: String
-Campo: Id      Operador: eq          Valor: 12345      Tipo: Number
+Field: Name    Operator: contains    Value: Ploomes    Type: String
+Field: Id      Operator: eq          Value: 12345      Type: Number
 ```
 
-Resultado gerado:
+Generated result:
 ```
 $filter=contains(Name,'Ploomes') and Id eq 12345
 ```
 
-### Operadores disponiveis
+### Available operators
 
-| Operador | Descricao | Exemplo |
+| Operator | Description | Example |
 |---|---|---|
-| `eq` | Igual | `Id eq 123` |
-| `ne` | Diferente | `Status ne 'Closed'` |
-| `gt` / `ge` | Maior / Maior ou igual | `Amount gt 1000` |
-| `lt` / `le` | Menor / Menor ou igual | `Amount le 5000` |
-| `contains` | Contem texto | `contains(Name,'test')` |
-| `startswith` | Comeca com | `startswith(Name,'A')` |
-| `endswith` | Termina com | `endswith(Email,'.com')` |
+| `eq` | Equal | `Id eq 123` |
+| `ne` | Not equal | `Status ne 'Closed'` |
+| `gt` / `ge` | Greater than / Greater than or equal | `Amount gt 1000` |
+| `lt` / `le` | Less than / Less than or equal | `Amount le 5000` |
+| `contains` | Contains text | `contains(Name,'test')` |
+| `startswith` | Starts with | `startswith(Name,'A')` |
+| `endswith` | Ends with | `endswith(Email,'.com')` |
 
-### Filtros de propriedades customizadas
+### Custom property filters
 
-Para filtrar por campos customizados (`OtherProperties`), use o construtor dedicado:
+To filter by custom fields (`OtherProperties`), use the dedicated builder:
 
 ```
-FieldKey: contact_cf_123    Operador: eq    Valor: test    Tipo: String
+FieldKey: contact_cf_123    Operator: eq    Value: test    Type: String
 ```
 
-Resultado gerado:
+Generated result:
 ```
 $filter=OtherProperties/any(p: p/FieldKey eq 'contact_cf_123' and p/StringValue eq 'test')
 ```
 
 ---
 
-## Construtor de Expand OData
+## OData Expand Builder
 
-Monte queries `$expand` complexas visualmente, com suporte a aninhamento:
+Build complex `$expand` queries visually, with nesting support:
 
-### Exemplo complexo via interface
+### Complex example via the UI
 
-O seguinte expand pode ser construido inteiramente pelo builder visual:
+The following expand can be built entirely through the visual builder:
 
 ```
 $expand=Stage($select=Id,Ordination,PipelineId,LastPipelineStage),
@@ -220,31 +220,31 @@ $expand=Stage($select=Id,Ordination,PipelineId,LastPipelineStage),
        OtherProperties($expand=CurrencyValue;$filter=FieldId eq 40006914 or FieldId eq 40006915)
 ```
 
-### Como configurar
+### How to configure
 
-1. **Expand Relations**: Adicione cada relacao com seu `$select` opcional
-2. **Expand Nested Filters**: Adicione filtros dentro de expansoes (ex: filtrar `OtherProperties` por `FieldId`)
+1. **Expand Relations**: Add each relation with its optional `$select`
+2. **Expand Nested Filters**: Add filters inside expansions (e.g., filter `OtherProperties` by `FieldId`)
 
 ---
 
-## Otimizacao OData por Padrao
+## OData Optimization Defaults
 
-Todas as requests GET sao otimizadas automaticamente:
+All GET requests are automatically optimized:
 
-| Parametro | Padrao | Descricao |
+| Parameter | Default | Description |
 |---|---|---|
-| `$top` | `1` | Limite de registros retornados |
-| `$skip` | `0` | Offset para paginacao |
-| `$select` | `Id` | Campos retornados (reduz payload) |
-| `$orderby` | `Id` | Ordenacao dos resultados |
+| `$top` | `1` | Limit of returned records |
+| `$skip` | `0` | Offset for pagination |
+| `$select` | `Id` | Returned fields (reduces payload) |
+| `$orderby` | `Id` | Sort order of results |
 
-> Todos os parametros sao editaveis - ajuste conforme necessario para sua automacao.
+> All parameters are editable — adjust as needed for your automation.
 
 ---
 
-## Exemplos de Uso
+## Usage Examples
 
-### Buscar contatos com filtro
+### Fetch contacts with a filter
 
 ```
 Resource: Contact
@@ -254,15 +254,15 @@ $select: Id,Name,Email
 $filter: contains(Name,'Silva')
 ```
 
-### Criar um negocio
+### Create a deal
 
 ```
 Resource: Deal
 Operation: Create
-Body: { "ContactId": 123, "Title": "Novo negocio", "Amount": 5000 }
+Body: { "ContactId": 123, "Title": "New deal", "Amount": 5000 }
 ```
 
-### Ganhar um negocio
+### Win a deal
 
 ```
 Resource: Deal
@@ -271,7 +271,7 @@ ID: 456
 Body: { "WonAmount": 5000, "WonProductsAmount": 5000 }
 ```
 
-### Buscar negocios com expand complexo
+### Fetch deals with a complex expand
 
 ```
 Resource: Deal
@@ -283,20 +283,20 @@ $expand: Stage($select=Id,Ordination),Owner($select=Id,Name),Pipeline($select=Id
 
 ---
 
-## Limites da API
+## API Limits
 
-| Limite | Valor |
+| Limit | Value |
 |---|---|
-| Requisicoes por minuto | 120 por conta |
-| Tamanho maximo do payload | 10 MB |
-| Registros por pagina | 300 (Contacts, Deals, Cities, Tasks, Orders, Quotes) |
+| Requests per minute | 120 per account |
+| Maximum payload size | 10 MB |
+| Records per page | 300 (Contacts, Deals, Cities, Tasks, Orders, Quotes) |
 
 ---
 
-## Desenvolvimento
+## Development
 
 ```bash
-# Instalar dependencias
+# Install dependencies
 npm install
 
 # Build
@@ -305,7 +305,7 @@ npm run build
 # Lint
 npm run lint
 
-# Formatar codigo
+# Format code
 npm run format
 
 # Watch mode
@@ -314,12 +314,12 @@ npm run dev
 
 ---
 
-## Licenca
+## License
 
 [MIT](LICENSE)
 
 ---
 
 <p align="center">
-  Feito com &#10084;&#65039; por <a href="https://www.ploomes.com">Ploomes</a>
+  Made with &#10084;&#65039; by <a href="https://www.ploomes.com">Ploomes</a>
 </p>

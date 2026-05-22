@@ -6,6 +6,8 @@ import {
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
+	JsonObject,
+	NodeApiError,
 	NodeConnectionTypes,
 	NodeOperationError,
 } from 'n8n-workflow';
@@ -71,7 +73,7 @@ export class Ploomes implements INodeType {
 		},
 		inputs: [NodeConnectionTypes.Main],
 		outputs: [NodeConnectionTypes.Main, NodeConnectionTypes.Main, NodeConnectionTypes.Main],
-		outputNames: ['Sucesso', 'Erro', 'Timeout'],
+		outputNames: ['Success', 'Error', 'Timeout'],
 		credentials: [
 			{
 				name: 'ploomesApi',
@@ -101,7 +103,7 @@ export class Ploomes implements INodeType {
 
 				const endpoint = resourceEndpoints[resource];
 				if (!endpoint) {
-					throw new Error(`Unknown resource: ${resource}`);
+					throw new NodeOperationError(this.getNode(), `Unknown resource: ${resource}`, { itemIndex: i });
 				}
 
 				let method: IHttpRequestMethods;
@@ -248,7 +250,7 @@ export class Ploomes implements INodeType {
 							const resourceId = this.getNodeParameter('resourceId', i) as string;
 							url = `${endpoint.basePath}(${resourceId})/${endpoint.actions[operation]}`;
 						} else {
-							throw new Error(`Unknown operation: ${operation} for resource: ${resource}`);
+							throw new NodeOperationError(this.getNode(), `Unknown operation: ${operation} for resource: ${resource}`, { itemIndex: i });
 						}
 						break;
 					}
@@ -356,24 +358,14 @@ export class Ploomes implements INodeType {
 					}
 				}
 			} catch (error) {
-				const err = error as Error & {
-					httpCode?: string;
-					statusCode?: number;
-					cause?: { code?: string };
-				};
+				const nodeApiError = new NodeApiError(this.getNode(), error as JsonObject);
 
-				const httpCode =
-					err.statusCode ??
-					(err.httpCode ? Number(err.httpCode) : null) ??
-					((err as NodeOperationError).context?.httpCode
-						? Number((err as NodeOperationError).context?.httpCode)
-						: null);
-
+				const httpCode = nodeApiError.httpCode ? Number(nodeApiError.httpCode) : null;
 				const isTimeout = httpCode === 408 || httpCode === 504;
 
 				const errorPayload: INodeExecutionData = {
 					json: {
-						error: err.message,
+						error: nodeApiError.message,
 						statusCode: httpCode,
 						isTimeout,
 						resource,
@@ -389,7 +381,7 @@ export class Ploomes implements INodeType {
 				}
 
 				if (!this.continueOnFail() && !isTimeout) {
-					throw error;
+					throw nodeApiError;
 				}
 			}
 		}

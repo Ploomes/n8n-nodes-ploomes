@@ -15,8 +15,5 @@
 			}
 		]
 	},
-	"alias": ["Ploomes", "CRM", "Sales", "Deals", "Contacts"],
-	"subcategories": {
-		"Sales": ["CRM"]
-	}
+	"alias": ["Ploomes", "CRM", "Sales", "Deals", "Contacts"]
 }
