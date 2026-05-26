@@ -10,7 +10,7 @@ export const odataOptions: INodeProperties[] = [
 		type: 'options',
 		options: [
 			{
-				name: 'Desativado',
+				name: 'Disabled',
 				value: 'disabled',
 				description: 'No cache — always fetch from API',
 			},
