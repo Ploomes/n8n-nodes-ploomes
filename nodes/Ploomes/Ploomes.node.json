@@ -1,5 +1,5 @@
 {
-	"node": "n8n-nodes-base.ploomes",
+	"node": "n8n-nodes-ploomes.ploomes",
 	"nodeVersion": "1.0",
 	"codexVersion": "1.0",
 	"categories": ["Sales"],
