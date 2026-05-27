@@ -199,8 +199,8 @@ export const odataOptions: INodeProperties[] = [
 						name: 'valueType',
 						type: 'options',
 						options: [
-							{ name: 'Auto (detect)', value: 'auto' },
-							{ name: 'String (always quote)', value: 'string' },
+							{ name: 'Auto (Detect)', value: 'auto' },
+							{ name: 'String (Always Quote)', value: 'string' },
 							{ name: 'Number', value: 'number' },
 							{ name: 'Boolean', value: 'boolean' },
 							{ name: 'Date', value: 'date' },
@@ -330,8 +330,8 @@ export const odataOptions: INodeProperties[] = [
 						name: 'filterType',
 						type: 'options',
 						options: [
-							{ name: 'Collection (any) — e.g., Lists/any(l: l/ListId eq 123)', value: 'any' },
-							{ name: 'Direct Navigation — e.g., City/Id eq 3941', value: 'direct' },
+							{ name: 'Collection (Any)', value: 'any' },
+							{ name: 'Direct Navigation', value: 'direct' },
 						],
 						default: 'any',
 						description: 'Use "Collection (any)" for one-to-many properties (Lists, Tags, OtherProperties) or "Direct Navigation" for single navigation properties (City, State, Country, Owner)',
